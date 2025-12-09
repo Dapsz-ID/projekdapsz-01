@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dapsz-Senpai — TikTok Downloader</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* small custom */
+    .fadeIn { animation: fadeIn .28s ease both; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* notification (will be toggled hidden/shown) */
+    #notif { min-width: 220px; max-width: 320px; }
+    /* spinner */
+    .spinner {
+      border: 3px solid rgba(255,255,255,0.12);
+      border-top-color: rgba(255,255,255,0.9);
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 0.9s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* small responsive tweak for cover image height */
+    .cover-h { height: 320px; }
+    @media (max-width: 640px) { .cover-h { height: 200px; } }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-slate-50 via-white to-slate-100 min-h-screen font-sans text-slate-900">
+
+  <!-- Notification -->
+  <div id="notif" class="hidden fixed top-5 right-5 z-50 rounded-lg shadow-lg px-4 py-3 text-white"></div>
+
+  <!-- MAIN WRAPPER -->
+  <div class="min-h-screen flex flex-col">
+
+    <!-- CONTENT CENTER -->
+    <main class="flex-1 flex items-center justify-center px-4 py-12">
+
+      <!-- Landing Page -->
+      <section id="page-landing" class="w-full max-w-3xl mx-auto text-center fadeIn">
+        <div class="bg-white/70 backdrop-blur-md rounded-3xl p-10 shadow-xl border border-slate-100">
+          <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-3">Dapsz-Senpai</h1>
+          <p class="text-slate-600 mb-6 text-lg sm:text-xl">Selamat Datang Di Website TikTok Downloader</p>
+
+          <div class="flex items-center justify-center gap-3">
+            <button id="btnGet" class="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-lg transform active:scale-95 transition">
+              <span class="text-sm font-semibold">Get</span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+
+          <p class="text-sm text-slate-400 mt-6">Simple, fast, and responsive — no frameworks, pure HTML/CSS/JS.</p>
+        </div>
+
+        <footer class="mt-6 text-center text-slate-500">
+          Created By Dapsz
+        </footer>
+      </section>
+
+      <!-- Downloader Page (hidden initially) -->
+      <section id="page-downloader" class="hidden w-full max-w-4xl mx-auto fadeIn">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Left: UI & input -->
+          <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-lg border">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-2xl font-bold">TikTok Downloader</h2>
+              <button id="btnBack" class="text-sm text-slate-600 hover:text-slate-800">← Back</button>
+            </div>
+
+            <!-- input -->
+            <div class="flex gap-3">
+              <input id="tiktokUrl" placeholder="Masukkan URL TikTok (contoh: https://www.tiktok.com/..)" class="flex-1 px-4 py-3 rounded-xl border focus:ring-2 focus:ring-indigo-300 outline-none" />
+              <button id="btnFetch" class="px-5 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 active:scale-95 transition">Fetch</button>
+            </div>
+
+            <!-- loading -->
+            <div id="loadingBox" class="hidden mt-4 flex items-center gap-3 text-indigo-600 font-medium">
+              <span class="spinner"></span>
+              <span id="loadingText">Loading...</span>
+            </div>
+
+            <!-- result card -->
+            <div id="resultBox" class="hidden mt-6 fadeIn">
+              <div class="bg-slate-50 rounded-xl p-4 border shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                  <!-- cover -->
+                  <div class="md:col-span-1">
+                    <div class="rounded-xl overflow-hidden bg-black/5">
+                      <img id="coverImg" class="w-full object-cover cover-h" alt="cover" src="" />
+                    </div>
+                  </div>
+
+                  <!-- details -->
+                  <div class="md:col-span-2 flex flex-col gap-3">
+                    <div>
+                      <h3 id="videoTitle" class="font-semibold text-lg"></h3>
+                      <p id="videoCaption" class="text-sm text-slate-600 mt-1"></p>
+                    </div>
+
+                    <div class="flex items-center gap-3 mt-2">
+                      <img id="authorAvatar" class="w-12 h-12 rounded-full border" src="" alt="avatar" />
+                      <div>
+                        <div id="authorName" class="font-medium"></div>
+                        <div id="authorUser" class="text-sm text-slate-500"></div>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-3 mt-3 text-center">
+                      <div class="bg-white/60 rounded-lg p-3 border">
+                        <div id="statPlay" class="font-bold"></div>
+                        <div class="text-xs text-slate-500">Play</div>
+                      </div>
+                      <div class="bg-white/60 rounded-lg p-3 border">
+                        <div id="statLike" class="font-bold"></div>
+                        <div class="text-xs text-slate-500">Like</div>
+                      </div>
+                      <div class="bg-white/60 rounded-lg p-3 border">
+                        <div id="statComment" class="font-bold"></div>
+                        <div class="text-xs text-slate-500">Comment</div>
+                      </div>
+                      <div class="bg-white/60 rounded-lg p-3 border">
+                        <div id="statShare" class="font-bold"></div>
+                        <div class="text-xs text-slate-500">Share</div>
+                      </div>
+                    </div>
+
+                    <div class="mt-3">
+                      <div class="text-sm text-slate-600">🎵 Music: <span id="musicInfo" class="font-medium"></span></div>
+                    </div>
+
+                    <!-- buttons -->
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <button id="btnDownloadNoWM" class="py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700">Download Video No WM</button>
+                      <button id="btnDownloadHD" class="py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700">Download HD</button>
+                      <button id="btnDownloadMusic" class="py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700">Download Music</button>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- hint / small -->
+            <p class="mt-4 text-sm text-slate-500">Tip: Jika unduhan gagal karena CORS, browser / sumber mungkin memblokir request. Saya mencoba fetch sebagai blob dulu, lalu fallback ke direct link. </p>
+
+          </div>
+
+          <!-- Right: quick info or credits -->
+          <aside class="bg-white rounded-2xl p-6 shadow-lg border flex flex-col gap-4">
+            <div>
+              <h4 class="font-semibold">Info</h4>
+              <p class="text-sm text-slate-600 mt-2">Gunakan link TikTok dari website atau app. Aplikasi ini menggunakan API: <code class="bg-slate-100 px-2 py-1 rounded">https://api.nekolabs.web.id/downloader/tiktok?url=</code></p>
+            </div>
+
+            <div>
+              <h4 class="font-semibold">Created</h4>
+              <p class="text-sm text-slate-600 mt-2">Created By Dapsz</p>
+            </div>
+
+            <div>
+              <h4 class="font-semibold">Note</h4>
+              <p class="text-sm text-slate-600 mt-2">Semua download dilakukan di client. Jika API atau file sumber memblokir CORS, unduhan mungkin gagal.</p>
+            </div>
+          </aside>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer small -->
+    <footer class="py-4 text-center text-xs text-slate-500 border-t">
+      © <span id="year"></span> 2025. Dapsz-Senpai
+    </footer>
+
+  </div>
+
+  <!-- SCRIPT -->
+  <script>
+    // elements
+    const pageLanding = document.getElementById('page-landing');
+    const pageDownloader = document.getElementById('page-downloader');
+    const btnGet = document.getElementById('btnGet');
+    const btnBack = document.getElementById('btnBack');
+
+    const notif = document.getElementById('notif');
+    const tiktokUrlInput = document.getElementById('tiktokUrl');
+    const btnFetch = document.getElementById('btnFetch');
+
+    const loadingBox = document.getElementById('loadingBox');
+    const loadingText = document.getElementById('loadingText');
+
+    const resultBox = document.getElementById('resultBox');
+    const coverImg = document.getElementById('coverImg');
+    const videoTitle = document.getElementById('videoTitle');
+    const videoCaption = document.getElementById('videoCaption');
+    const authorAvatar = document.getElementById('authorAvatar');
+    const authorName = document.getElementById('authorName');
+    const authorUser = document.getElementById('authorUser');
+    const statPlay = document.getElementById('statPlay');
+    const statLike = document.getElementById('statLike');
+    const statComment = document.getElementById('statComment');
+    const statShare = document.getElementById('statShare');
+    const musicInfo = document.getElementById('musicInfo');
+
+    const btnDownloadNoWM = document.getElementById('btnDownloadNoWM');
+    const btnDownloadHD = document.getElementById('btnDownloadHD');
+    const btnDownloadMusic = document.getElementById('btnDownloadMusic');
+
+    const yearSpan = document.getElementById('year');
+    yearSpan.textContent = new Date().getFullYear();
+
+    // state
+    let currentVideoUrl = '';
+    let currentMusicUrl = '';
+    let currentTitle = '';
+
+    // navigation
+    btnGet.addEventListener('click', () => {
+      pageLanding.classList.add('hidden');
+      pageDownloader.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    btnBack.addEventListener('click', () => {
+      pageDownloader.classList.add('hidden');
+      pageLanding.classList.remove('hidden');
+    });
+
+    // notifications
+    let notifTimer = null;
+    function showNotif(type, message, duration = 3500) {
+      clearTimeout(notifTimer);
+      notif.style.opacity = '0';
+      notif.className = 'fixed top-5 right-5 z-50 rounded-lg shadow-lg px-4 py-3 text-white fadeIn';
+      notif.style.background = type === 'error' ? '#ef4444' : (type === 'loading' ? '#2563eb' : '#16a34a');
+      notif.innerHTML = message;
+      notif.style.display = 'block';
+      notif.style.opacity = '1';
+      if (type !== 'loading') {
+        notifTimer = setTimeout(() => {
+          notif.style.opacity = '0';
+          setTimeout(() => notif.style.display = 'none', 220);
+        }, duration);
+      }
+    }
+    function hideNotif() {
+      notif.style.opacity = '0';
+      setTimeout(() => notif.style.display = 'none', 220);
+    }
+
+    // URL validation (simple)
+    function isValidTiktokUrl(u) {
+      try {
+        const url = new URL(u);
+        return /tiktok\.com|vt\.tiktok\.com/.test(url.hostname) || u.includes('tiktok');
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // Fetch data
+    btnFetch.addEventListener('click', fetchData);
+    tiktokUrlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') fetchData(); });
+
+    async function fetchData() {
+      const raw = tiktokUrlInput.value.trim();
+      if (!raw) { showNotif('error', 'URL tidak boleh kosong'); return; }
+      if (!isValidTiktokUrl(raw)) { showNotif('error', 'URL tampaknya bukan link TikTok yang valid'); return; }
+
+      // UI states
+      resultBox.classList.add('hidden');
+      loadingBox.classList.remove('hidden');
+      showNotif('loading', 'Mengambil data...');
+
+      try {
+        const endpoint = 'https://api.nekolabs.web.id/downloader/tiktok?url=' + encodeURIComponent(raw);
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error('API error: ' + res.status);
+        const json = await res.json();
+
+        if (!json || json.success !== true || !json.result) {
+          throw new Error('Response API tidak valid');
+        }
+
+        const r = json.result;
+
+        // Fill UI
+        coverImg.src = r.cover || '';
+        videoTitle.textContent = r.title || (r.music_info && r.music_info.title) || 'Tanpa judul';
+        videoCaption.textContent = r.create_at ? ('Uploaded: ' + r.create_at) : '';
+        authorAvatar.src = (r.author && r.author.avatar) || '';
+        authorName.textContent = (r.author && r.author.name) || 'Unknown';
+        authorUser.textContent = (r.author && r.author.username) || '';
+
+        statPlay.textContent = (r.stats && r.stats.play) || '-';
+        statLike.textContent = (r.stats && r.stats.like) || '-';
+        statComment.textContent = (r.stats && r.stats.comment) || '-';
+        statShare.textContent = (r.stats && r.stats.share) || '-';
+
+        musicInfo.textContent = (r.music_info && (r.music_info.title + ' — ' + r.music_info.author)) || '-';
+
+        currentVideoUrl = r.videoUrl || '';
+        currentMusicUrl = r.musicUrl || '';
+        currentTitle = r.title || 'tiktok';
+
+        resultBox.classList.remove('hidden');
+        showNotif('success', 'Data berhasil diambil');
+      } catch (err) {
+        console.error(err);
+        showNotif('error', 'Gagal mengambil data: ' + (err.message || 'Unknown'));
+      } finally {
+        loadingBox.classList.add('hidden');
+        hideNotif(); // hide any lingering loading badge
+      }
+    }
+
+    // download helper: try fetch as blob first (to better handle "download without new tab"),
+    // if fetch blocked (CORS) fallback to creating anchor with remote URL (may or may not work).
+    async function downloadFileByUrl(url, filename) {
+      if (!url) { showNotif('error', 'File tidak tersedia'); return; }
+      showNotif('loading', 'Mempersiapkan unduhan...');
+      try {
+        // Try to fetch as blob
+        const resp = await fetch(url, { mode: 'cors' });
+        if (!resp.ok) throw new Error('Fetch failed: ' + resp.status);
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        // revoke after delay to allow download to start
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+        showNotif('success', 'Unduhan dimulai');
+      } catch (err) {
+        console.warn('Blob fetch failed, fallback to direct link:', err);
+        // fallback: try direct anchor (may trigger cross-origin download or open in new tab depending on browser)
+        try {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          showNotif('success', 'Unduhan dimulai (fallback). Jika gagal, sumber memblokir CORS.');
+        } catch (err2) {
+          console.error(err2);
+          showNotif('error', 'Gagal mengunduh file (CORS atau blokir dari server).');
+        }
+      }
+    }
+
+    // download button actions
+    btnDownloadNoWM.addEventListener('click', () => {
+      if (!currentVideoUrl) return showNotif('error', 'Video tidak tersedia');
+      const safeName = sanitizeFilename((currentTitle || 'tiktok') + '-nowm.mp4');
+      downloadFileByUrl(currentVideoUrl, safeName);
+    });
+    btnDownloadHD.addEventListener('click', () => {
+      if (!currentVideoUrl) return showNotif('error', 'Video tidak tersedia');
+      const safeName = sanitizeFilename((currentTitle || 'tiktok') + '-hd.mp4');
+      downloadFileByUrl(currentVideoUrl, safeName);
+    });
+    btnDownloadMusic.addEventListener('click', () => {
+      if (!currentMusicUrl) return showNotif('error', 'Music tidak tersedia');
+      const safeName = sanitizeFilename((currentTitle || 'tiktok') + '-audio.mp3');
+      downloadFileByUrl(currentMusicUrl, safeName);
+    });
+
+    // small helper to sanitize filename
+    function sanitizeFilename(name) {
+      return name.replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, '-').toLowerCase();
+    }
+
+    // small accessibility: autofocus input when arriving at page
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && !pageLanding.classList.contains('hidden')) {
+        // no-op
+      }
+    });
+
+    // auto-focus input when downloader page shows
+    const observer = new MutationObserver(() => {
+      if (!pageDownloader.classList.contains('hidden')) {
+        setTimeout(() => tiktokUrlInput.focus(), 250);
+      }
+    });
+    observer.observe(pageDownloader, { attributes: true, attributeFilter: ['class'] });
+
+  </script>
+</body>
+</html>
